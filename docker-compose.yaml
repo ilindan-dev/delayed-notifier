@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Сервис базы данных PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: notifier_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: notifierdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d notifierdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Сервис кэширования Redis
+  redis:
+    image: redis:7-alpine
+    container_name: notifier_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Брокер сообщений RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: notifier_rabbitmq
+    ports:
+      - "5672:5672"   # Порт AMQP для приложения
+      - "15672:15672" # Порт для веб-интерфейса управления
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Наш API-сервер
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notifier_api
+    command: ["./api"] # Запускаем бинарник API
+    env_file:
+      - .env # Внедряем секреты из .env файла
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Наш Воркер (фоновый обработчик)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notifier_worker
+    command: ["./worker"] # Запускаем бинарник Воркера
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+# Определяем именованные тома для хранения данных
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
