@@ -26,7 +26,6 @@ const (
 // EmailDetails contains recipient information specific to the email channel.
 type EmailDetails struct {
 	To string // The recipient's email address.
-	// CC, BCC fields could be added here later if needed.
 }
 
 // TelegramDetails contains recipient information specific to the telegram channel.
