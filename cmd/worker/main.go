@@ -5,7 +5,7 @@ import (
 	"go.uber.org/fx"
 )
 
-// main is the entry point for the API server application.
+// main is the entry point for the background worker application.
 func main() {
-	fx.New(app.APIModule).Run()
+	fx.New(app.WorkerModule).Run()
 }
