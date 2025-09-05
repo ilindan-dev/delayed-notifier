@@ -1,0 +1,35 @@
+# Application-wide settings
+logger:
+  level: "debug" # "info" or "warn" for production
+
+http:
+  port: ":8080"
+  gin_mode: "debug" # use "release" for production
+
+# Connection pool settings for PostgreSQL
+postgres:
+  pool:
+    max_open_conns: 20
+    max_idle_conns: 10
+    conn_max_lifetime: "15m"
+
+# Notifier settings
+notifiers:
+  # "development" uses the LogNotifier, which just prints to the console.
+  # "production" enables real Email and Telegram notifiers.
+  mode: "development"
+
+  # Settings for the email channel (used in "production" mode).
+  # These values will be loaded from the .env file.
+  email:
+    host: "smtp.mailtrap.io"
+    port: 2525
+    username: ""
+    password: ""
+    from: '"Delayed Notifier" <no-reply@example.com>'
+
+  # Settings for the telegram channel (used in "production" mode).
+  # This value will be loaded from the .env file.
+  telegram:
+    bot_token: ""
+
